@@ -32,19 +32,25 @@ public class Tower : MonoBehaviour
     {
         while (true)
         {
-            if (enemiesList.Count > 0 && enemiesList[0] == null)
-            {
-                OnEnemyDeath(enemiesList[0]);
-            }
-            if (enemiesList.Count > 0)
-            {
-                Projectile projectile = Instantiate( // Зберігаємо об'єкт в змінну
-                    projectilePrefab, // посилання на шаблон
-                    spawnPoint.transform.position, // позиція спавну
-                    Quaternion.identity).GetComponent<Projectile>(); // обертання
+            // Очищуємо список від мертвих чи неіснуючих ворогів
+            enemiesList.RemoveAll(enemy => enemy == null);
 
-                projectile.target = enemiesList[0];
+            // Якщо список пустий
+            if (enemiesList.Count == 0)
+            {
+                towerAttack = null; // Очищуємо змінну що зберігає атаку
+                yield break; // Зупиняємо цикл атаки
             }
+
+            // Мішень - перший ворого у списку
+            GameObject target = enemiesList[0];
+            
+            Projectile projectile = Instantiate( // Зберігаємо об'єкт в змінну
+                projectilePrefab, // посилання на шаблон
+                spawnPoint.transform.position, // позиція спавну
+                Quaternion.identity).GetComponent<Projectile>(); // обертання
+
+            projectile.target = target;
             
             yield return new WaitForSecondsRealtime(attackInterval); // Затримка
         }
@@ -53,10 +59,8 @@ public class Tower : MonoBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            Debug.Log("Засік ворога по тегу");
-            if (enemiesList.Count == 0)
+            if (towerAttack == null)
             {
-                Debug.Log("Ворогів було нуль, починаю стріляти");
                 towerAttack = StartCoroutine(ProjectileSpawnCycle());
             }
             enemiesList.Add(other.gameObject);
@@ -64,12 +68,15 @@ public class Tower : MonoBehaviour
     }
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        if (other.CompareTag("Enemy")) // Перевірка тегу
         {
-            if (enemiesList.Count == 0)
+            // Якщо вороги відсутні
+            if (enemiesList.Count == 0 && towerAttack != null)
             {
+                // Зупинка корутіни пострілу
                 StopCoroutine(towerAttack);
             }
+            // Видалення ворога зі списку
             enemiesList.Remove(other.gameObject);
         }
     }
