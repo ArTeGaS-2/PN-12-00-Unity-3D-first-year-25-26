@@ -37,6 +37,7 @@ public class BuildManager : MonoBehaviour
     {
         building = true;
         preview = Instantiate(previewPrefab);
+        UI_Controler.Instance.ClosePanels();
     }
     public void CancelBuild()
     {
